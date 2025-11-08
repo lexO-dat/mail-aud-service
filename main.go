@@ -248,11 +248,11 @@ func generateRecommendationHTML(req RecommendationRequest) string {
             <!-- Footer Section -->
             <div class="footer-section">
                 <div class="footer-text">Have questions or need assistance?</div>
-                <a href="http://localhost:8080/call-action?phone=%s" class="call-btn">
+                <a href="http://165.22.175.227:8000/api/v1/phonecalls/make_call_get?phone_number=%s" class="call-btn">
                     <span class="call-icon">📞</span>Make a call!
                 </a>
                 <div class="footer-info">
-                    <p>We're here to help Monday - Friday, 9AM - 6PM EST</p>
+                    <p>We're here to help 24 / 7 !</p>
                 </div>
             </div>
         </div>
@@ -265,16 +265,19 @@ func generateRecommendationHTML(req RecommendationRequest) string {
 
 // Handler para enviar el correo
 func sendEmailHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("🔵 Recibida petición en /send-email")
 	enableCors(&w) // Habilitar CORS para todas las solicitudes
 
 	// Manejar las solicitudes OPTIONS para CORS
 	if r.Method == "OPTIONS" {
+		log.Println("✅ Respondiendo a OPTIONS request")
 		w.WriteHeader(http.StatusOK)
 		return
 	}
 
 	// Asegurarse de que sea un POST
 	if r.Method != http.MethodPost {
+		log.Printf("❌ Método no permitido: %s", r.Method)
 		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
 		return
 	}
@@ -283,9 +286,12 @@ func sendEmailHandler(w http.ResponseWriter, r *http.Request) {
 	var emailReq EmailRequest
 	err := json.NewDecoder(r.Body).Decode(&emailReq)
 	if err != nil {
+		log.Printf("❌ Error al decodificar JSON: %v", err)
 		http.Error(w, "Error al procesar el JSON", http.StatusBadRequest)
 		return
 	}
+
+	log.Printf("📧 Procesando email para: %s, Subject: %s", emailReq.Mail, emailReq.Subject)
 
 	// Construir el contenido del correo
 	content := fmt.Sprintf(`
@@ -294,39 +300,67 @@ func sendEmailHandler(w http.ResponseWriter, r *http.Request) {
 		<p>%s</p>
 	`, emailReq.Mail, emailReq.Subject, emailReq.Body)
 
+	// Verificar configuración de email
+	emailName := os.Getenv("EMAIL_SENDER_NAME")
+	emailAddress := os.Getenv("EMAIL_SENDER_ADDRESS")
+	emailPassword := os.Getenv("EMAIL_SENDER_PASSWORD")
+	destinationEmail := os.Getenv("DESTINATION_EMAIL")
+
+	log.Printf("📋 Config Email - Name: %s, Address: %s, Password: %s, Destination: %s",
+		emailName, emailAddress,
+		func() string {
+			if emailPassword != "" {
+				return "[CONFIGURADO]"
+			} else {
+				return "[NO CONFIGURADO]"
+			}
+		}(),
+		destinationEmail)
+
+	// Si no hay configuración de email, devolver respuesta exitosa sin enviar
+	if emailAddress == "" || emailPassword == "" {
+		log.Println("⚠️ Configuración de email no encontrada, respondiendo sin enviar")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Email configurado pero no enviado (falta configuración)"))
+		return
+	}
+
 	// Crear el remitente usando el paquete mail
-	sender := mail.NewGmailSender(
-		os.Getenv("EMAIL_SENDER_NAME"),
-		os.Getenv("EMAIL_SENDER_ADDRESS"),
-		os.Getenv("EMAIL_SENDER_PASSWORD"),
-	)
+	log.Println("📨 Creando sender...")
+	sender := mail.NewGmailSender(emailName, emailAddress, emailPassword)
 
 	// Enviar el correo
-	to := []string{os.Getenv("DESTINATION_EMAIL")}
+	to := []string{destinationEmail}
 	attachFiles := []string{} // Puedes agregar archivos si es necesario
 
+	log.Printf("📤 Enviando email a: %v", to)
 	err = sender.SendEmail(emailReq.Subject, content, to, nil, nil, attachFiles)
 	if err != nil {
+		log.Printf("❌ Error al enviar email: %v", err)
 		http.Error(w, fmt.Sprintf("Error al enviar el correo: %v", err), http.StatusInternalServerError)
 		return
 	}
 
+	log.Println("✅ Email enviado exitosamente")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Correo enviado exitosamente"))
 }
 
 // Handler para enviar recomendaciones de productos
 func sendRecommendationHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("🔵 Recibida petición en /recommendations")
 	enableCors(&w) // Habilitar CORS para todas las solicitudes
 
 	// Manejar las solicitudes OPTIONS para CORS
 	if r.Method == "OPTIONS" {
+		log.Println("✅ Respondiendo a OPTIONS request")
 		w.WriteHeader(http.StatusOK)
 		return
 	}
 
 	// Asegurarse de que sea un POST
 	if r.Method != http.MethodPost {
+		log.Printf("❌ Método no permitido: %s", r.Method)
 		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
 		return
 	}
@@ -335,9 +369,13 @@ func sendRecommendationHandler(w http.ResponseWriter, r *http.Request) {
 	var recommendationReq RecommendationRequest
 	err := json.NewDecoder(r.Body).Decode(&recommendationReq)
 	if err != nil {
+		log.Printf("❌ Error al decodificar JSON: %v", err)
 		http.Error(w, "Error al procesar el JSON", http.StatusBadRequest)
 		return
 	}
+
+	log.Printf("🛍️ Procesando recomendaciones para: %s, Productos: %d",
+		recommendationReq.UserName, len(recommendationReq.Products))
 
 	// Generar el HTML de las recomendaciones
 	htmlContent := generateRecommendationHTML(recommendationReq)
@@ -450,7 +488,7 @@ func makePhoneCall(phoneNumber string) error {
 
 	// Hacer la petición POST a la API externa
 	resp, err := http.Post(
-		"http://localhost:8000/api/v1/phonecalls/make_call_body",
+		"http://165.22.175.227:8000/api/v1/phonecalls/make_call_body",
 		"application/json",
 		bytes.NewBuffer(jsonData),
 	)
@@ -467,7 +505,32 @@ func makePhoneCall(phoneNumber string) error {
 	return nil
 }
 
+// Health check endpoint
+func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("🔵 Health check request")
+	enableCors(&w)
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	response := map[string]string{
+		"status":  "ok",
+		"service": "email-api",
+		"version": "1.0.0",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
 func main() {
+	// Health check endpoint
+	http.HandleFunc("/health", healthCheckHandler)
+	http.HandleFunc("/", healthCheckHandler) // Root también responde con health check
+
 	// Endpoint original para compatibilidad
 	http.HandleFunc("/send-email", sendEmailHandler)
 
@@ -477,10 +540,18 @@ func main() {
 	// Endpoint para manejar las acciones del botón "Make a call"
 	http.HandleFunc("/call-action", callActionHandler)
 
-	fmt.Println("Servidor escuchando en el puerto 8080...")
-	fmt.Println("Endpoints disponibles:")
+	fmt.Println("🚀 Servidor escuchando en 0.0.0.0:8080...")
+	fmt.Println("📋 Endpoints disponibles:")
+	fmt.Println("  GET  /health - Health check")
+	fmt.Println("  GET  / - Health check")
 	fmt.Println("  POST /send-email - Envío de correo básico")
 	fmt.Println("  POST /recommendations - Envío de recomendaciones de productos")
 	fmt.Println("  GET|POST /call-action - Manejo de acciones de llamada")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	fmt.Println("⚠️  Asegúrate de configurar las variables de entorno en .env")
+
+	// Mostrar configuración actual
+	emailConfigured := os.Getenv("EMAIL_SENDER_ADDRESS") != ""
+	fmt.Printf("📧 Email configurado: %t\n", emailConfigured)
+
+	log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
 }
