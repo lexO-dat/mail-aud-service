@@ -378,25 +378,45 @@ func sendRecommendationHandler(w http.ResponseWriter, r *http.Request) {
 		recommendationReq.UserName, len(recommendationReq.Products))
 
 	// Generar el HTML de las recomendaciones
+	log.Println("🎨 Generando HTML de recomendaciones...")
 	htmlContent := generateRecommendationHTML(recommendationReq)
+	log.Printf("✅ HTML generado, tamaño: %d caracteres", len(htmlContent))
+
+	// Verificar configuración de email
+	emailName := os.Getenv("EMAIL_SENDER_NAME")
+	emailAddress := os.Getenv("EMAIL_SENDER_ADDRESS")
+	emailPassword := os.Getenv("EMAIL_SENDER_PASSWORD")
+	
+	log.Printf("📋 Config Email - Name: %s, Address: %s, Password: %s, Destination: %s", 
+		emailName, emailAddress, 
+		func() string { if emailPassword != "" { return "[CONFIGURADO]" } else { return "[NO CONFIGURADO]" } }(),
+		recommendationReq.DestinationEmail)
+
+	// Si no hay configuración de email, devolver respuesta exitosa sin enviar
+	if emailAddress == "" || emailPassword == "" {
+		log.Println("⚠️ Configuración de email no encontrada, respondiendo sin enviar")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Recomendaciones configuradas pero no enviadas (falta configuración)"))
+		return
+	}
 
 	// Crear el remitente usando el paquete mail
-	sender := mail.NewGmailSender(
-		os.Getenv("EMAIL_SENDER_NAME"),
-		os.Getenv("EMAIL_SENDER_ADDRESS"),
-		os.Getenv("EMAIL_SENDER_PASSWORD"),
-	)
+	log.Println("📨 Creando sender...")
+	sender := mail.NewGmailSender(emailName, emailAddress, emailPassword)
 
 	// Enviar el correo
 	to := []string{recommendationReq.DestinationEmail}
 	attachFiles := []string{} // Puedes agregar archivos si es necesario
 
+	log.Printf("📤 Enviando email de recomendaciones a: %v", to)
 	err = sender.SendEmail(recommendationReq.Subject, htmlContent, to, nil, nil, attachFiles)
 	if err != nil {
+		log.Printf("❌ Error al enviar email de recomendaciones: %v", err)
 		http.Error(w, fmt.Sprintf("Error al enviar el correo: %v", err), http.StatusInternalServerError)
 		return
 	}
 
+	log.Println("✅ Email de recomendaciones enviado exitosamente")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Correo de recomendaciones enviado exitosamente"))
 }

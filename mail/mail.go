@@ -2,7 +2,9 @@ package mail
 
 import (
 	"fmt"
+	"log"
 	"net/smtp"
+	"time"
 
 	"github.com/jordan-wright/email"
 )
@@ -45,6 +47,8 @@ func (sender *GmailSender) SendEmail(
 	bcc []string,
 	attachFiles []string,
 ) error {
+	log.Printf("📧 Iniciando envío de email a: %v", to)
+	
 	e := email.NewEmail()
 	e.From = fmt.Sprintf("%s <%s>", sender.name, sender.fromEmailAdress)
 	e.Subject = subject
@@ -53,6 +57,7 @@ func (sender *GmailSender) SendEmail(
 	e.Cc = cc
 	e.Bcc = bcc
 
+	log.Printf("📎 Adjuntando %d archivos...", len(attachFiles))
 	for _, f := range attachFiles {
 		_, err := e.AttachFile(f)
 		if err != nil {
@@ -60,8 +65,29 @@ func (sender *GmailSender) SendEmail(
 		}
 	}
 
+	log.Println("🔐 Configurando autenticación SMTP...")
 	smptpAuth := smtp.PlainAuth("", sender.fromEmailAdress, sender.fromEmailPassword, smtpAuthAdress)
 
-	return e.Send(smtpServerAuth, smptpAuth)
-
+	log.Printf("📡 Conectando a servidor SMTP: %s", smtpServerAuth)
+	
+	// Crear un canal para manejar el timeout
+	done := make(chan error, 1)
+	
+	go func() {
+		done <- e.Send(smtpServerAuth, smptpAuth)
+	}()
+	
+	// Esperar por el resultado o timeout
+	select {
+	case err := <-done:
+		if err != nil {
+			log.Printf("❌ Error SMTP: %v", err)
+			return err
+		}
+		log.Println("✅ Email enviado exitosamente por SMTP")
+		return nil
+	case <-time.After(30 * time.Second):
+		log.Println("⏰ Timeout al enviar email (30s)")
+		return fmt.Errorf("timeout sending email after 30 seconds")
+	}
 }
