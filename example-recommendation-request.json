@@ -1,0 +1,27 @@
+{
+  "user_name": "Juan",
+  "subject": "Productos especiales seleccionados para ti",
+  "products": [
+    {
+      "name": "Auriculares Premium Bluetooth",
+      "description": "Experimenta la excelencia con nuestros auriculares mejor valorados. Perfectos para uso diario con calidad excepcional y valor inigualable.",
+      "image": "https://ejemplo.com/auriculares.jpg",
+      "buy_url": "https://tienda.com/auriculares-premium"
+    },
+    {
+      "name": "Smartwatch Deportivo",
+      "description": "Eleva tu estilo de vida con este artículo más vendido. Confiado por miles de clientes satisfechos en todo el mundo.",
+      "image": "https://ejemplo.com/smartwatch.jpg",
+      "buy_url": "https://tienda.com/smartwatch-deportivo"
+    },
+    {
+      "name": "Cargador Inalámbrico Rápido",
+      "description": "Tecnología de carga avanzada que simplifica tu vida diaria. Diseño elegante y funcionalidad superior.",
+      "image": "",
+      "buy_url": "https://tienda.com/cargador-inalambrico"
+    }
+  ],
+  "call_to_action_url": "https://api.ejemplo.com/contact",
+  "phone_number": "+56973756474",
+  "destination_email": "lucas.abello@mail.udp.cl"
+}

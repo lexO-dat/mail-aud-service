@@ -1,0 +1,33 @@
+{
+  "user_name": "Pedro Perez",
+  "subject": "🎁 Ofertas Especiales Seleccionadas Para Ti",
+  "products": [
+    {
+      "name": "Auriculares Premium Bluetooth",
+      "description": "Experimenta la excelencia con nuestros auriculares mejor valorados. Perfectos para uso diario con calidad excepcional y valor inigualable. Cancelación de ruido activa y 30 horas de batería.",
+      "image": "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=300&h=300&fit=crop",
+      "buy_url": "https://tienda.com/auriculares-premium"
+    },
+    {
+      "name": "Smartwatch Deportivo Pro",
+      "description": "Eleva tu estilo de vida con este artículo más vendido. Confiado por miles de clientes satisfechos en todo el mundo. Monitoreo de salud 24/7 y resistente al agua.",
+      "image": "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=300&h=300&fit=crop",
+      "buy_url": "https://tienda.com/smartwatch-deportivo"
+    },
+    {
+      "name": "Cargador Inalámbrico Rápido",
+      "description": "Tecnología de carga avanzada que simplifica tu vida diaria. Diseño elegante y funcionalidad superior. Compatible con todos los dispositivos modernos.",
+      "image": "https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=300&h=300&fit=crop",
+      "buy_url": "https://tienda.com/cargador-inalambrico"
+    },
+    {
+      "name": "Laptop Gaming Ultra",
+      "description": "Potencia sin límites para gaming y trabajo profesional. Procesador de última generación, gráficos avanzados y diseño premium. La herramienta perfecta para creativos y gamers.",
+      "image": "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=300&h=300&fit=crop",
+      "buy_url": "https://tienda.com/laptop-gaming"
+    }
+  ],
+  "call_to_action_url": "https://webhook.site/unique-id-here",
+  "phone_number": "+56973756474",
+  "destination_email": "lucas.abello@mail.udp.cl"
+}
